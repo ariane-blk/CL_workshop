@@ -26,8 +26,7 @@ required_packages <- c(
   "readr",
   "shiny", 
   "shinyWidgets"
-  #"slickR" #if error install.packages('remotes') then remotes::install_github('yonicd/slickR')
-)
+  )
 
 # Install any that are missing
 new.packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
@@ -39,4 +38,4 @@ if (length(new.packages)) {
 lapply(required_packages, require, character.only = TRUE)
 
 # Snapshot current environment
-renv::snapshot(prompt = FALSE)
+renv::snapshot(prompt = TRUE)
