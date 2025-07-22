@@ -25,7 +25,7 @@ required_packages <- c(
   "markdown",
   "readr",
   "lme4",
-  #"shiny", 
+  "shiny", 
   "shinyWidgets"
   )
 
