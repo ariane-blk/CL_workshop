@@ -21,6 +21,7 @@ required_packages <- c(
   "dplyr",
   "ggplot2", 
   "gtools",
+  "ggpmisc",
   "markdown",
   "readr",
   "shiny", 

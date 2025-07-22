@@ -21,11 +21,28 @@ ui <- page_fillable(
   #   id = "sidebar",
   # ),
   navset_card_tab(id = "navs",  
-    nav_panel("THE CENTILOID SCALE ⚖️",
-              includeMarkdown("intro.Rmd"),
-              p("Once mapped to this scale, SUVR values from any validated tracer and pipeline can be ",
-                "converted to Centiloids, enabling consistent interpretation and comparison in various contexts. ",
-                actionLink("go_to_interpretation", "Go to the Interpretation section.")
+    nav_panel("⚖️ Why quantify Aβ?",
+              accordion(  
+                open = FALSE,
+                accordion_panel( 
+                  title = "From visual read to quantification", 
+                  icon = bsicons::bs_icon("eye-fill"),
+                  div(
+                    style = "text-align: center;",
+                    imageOutput("image_cl_vr", height = "auto", width = "75%")
+                  ),
+                  "(List is not exhaustive!)"
+                  ),  
+                accordion_panel(
+                  title = "Quantification 101",
+                  icon = bsicons::bs_icon("thermometer-half"),
+                  #htmltools::includeHTML("intro.html"),
+                  includeMarkdown("intro.Rmd"),
+                  p("Once mapped to this scale, SUVR values from any validated tracer and pipeline can be ",
+                    "converted to Centiloids, enabling consistent interpretation and comparison in various contexts. "
+                    
+                  )
+                )
               )
               ), 
     nav_panel("🧠 Centiloid 101",  "layout_columns",     
@@ -37,28 +54,20 @@ ui <- page_fillable(
                   textOutput("cl_output")
                 ),
                 card( 
-                  card_header("Card 1 header"),
-                  p("The Centiloid (CL) scale is a standardization method that makes it easier to compare amyloid PET results across studies and processing pipelines. In this notebook, we’ll explain what the Centiloid scale is, why it's useful, and how to convert values from a custom pipeline to the CL scale using dummy data.
-
-> **Goal**: By the end of this notebook, you'll know how to:
-                      > - Understand the rationale behind the Centiloid scale
-                    > - Apply a simple linear transformation to convert your PET values to Centiloids
-                    > - Interpret the results meaningfully"),
+                  card_header("Stretch SUVR to Centiloid Scale"),
+          
                   sliderInput("stretch", "Adjust SUVR range (blue = 0 CL, red = 100 CL)",
                               min = 0.5, max = 3.0, value = c(1.0, 1.5), step = 0.01),
                   plotOutput("stretchPlot1")
                 ),
                 card(
-                  card_header("Stretch SUVR to Centiloid Scale"),
-                  chooseSliderSkin("Flat", color="black"),
-                  sliderInput("stretch_range", "Adjust SUVR range (blue = 0 CL, red = 100 CL)",
-                              min = 0.5, max = 3.0, value = c(1.0, 2.0), step = 0.01),
-                  plotOutput("stretchPlot")
+                  card_header("Centiloid Scaling of F-18 tracers"),
+                  plotOutput("h2hPlot")
                   
                 )
               )
               ),
-    nav_panel("How to interpret it",  value = "interpretation",
+    nav_panel("❓ How to interpret it",  value = "interpretation",
               layout_columns(
                 card(
                   card_header("General guidelines for Centiloid scale interpretation"),
@@ -78,11 +87,10 @@ ui <- page_fillable(
               context‐of‐use from the AMYPAD consortium, Alzheimer's & Dementia (2024)"
               ),
     #nav_panel("Notable stuff", "Dynamic range Gill"),
-    nav_panel("What not to do", "Why can't you apply any Centiloid equation?",
+    nav_panel("🚫 What not to do", "Why can't you apply any Centiloid equation?",
     layout_columns( 
             card(
               numericInput("suvr_input_eq", "Input SUVR value", value = 1.4, min = 0, max = 2,  step = 0.1),
-              #sliderInput("suvr_input_eq", "Select SUVR value", min = 0, max = 2, value = 1.4, step = 0.01),
               plotOutput("cl_eq_plot")),
             card(
               h3("Level-3"),
@@ -91,7 +99,7 @@ ui <- page_fillable(
             col_widths = c(6, 6) 
           ) ), 
           
-    nav_panel("Validate your own pipeline", #"Page B content",
+    nav_panel("🧑‍💻 Validate your own pipeline", #"Page B content",
               layout_columns( 
                 card(
                   h3("Level-1"),
@@ -111,14 +119,34 @@ ui <- page_fillable(
                 ),
                 col_widths = c(4, 4, 4) 
               ) ), 
-    nav_panel("Software with Centiloid", "Page C content"), 
+    nav_panel("💿 Software", 
+    accordion(  
+      open = FALSE,
+      accordion_panel( 
+        title = "Clinical software", 
+        icon = bsicons::bs_icon("file-earmark-medical"),
+        "(List is not exhaustive!)",
+        tableOutput("table_software_clinical"),
+        "* Regulatory approval as of July 2025"
+       
+      ),  
+      accordion_panel(
+        title = "Research software",
+        icon = bsicons::bs_icon("easel2"),
+        "(List is not exhaustive!)",
+        tableOutput("table_software_research")
+        
+      ))),
     nav_menu( 
       "Resources", 
-      nav_panel("Literature", "Panel D content"), 
+      nav_panel("Literature", 
+                includeMarkdown("refs.Rmd")), 
       "----", 
       "Websites:", 
       nav_item( 
-        a("GAAIN", href = "http://www.gaain.org/centiloid-project") 
+        a("GAAIN", href = "http://www.gaain.org/centiloid-project"),
+        a("PubMed Centiloid", href = "https://pubmed.ncbi.nlm.nih.gov/?term=centiloid")
+        
       ), 
     ), 
   ), 

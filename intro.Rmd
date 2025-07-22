@@ -4,11 +4,14 @@ author: "Ariane"
 date: "2025-07-04"
 output: html_document
 ---
-# 📏 Understanding the Centiloid Scale
 
 ## Why Standardize Amyloid PET Quantification?
 
-Amyloid PET imaging has revolutionized our ability to detect and quantify amyloid-beta plaques *in vivo* — a defining pathological characterisic of Alzheimer's disease. But there's a problem: different tracers (e.g., PiB, Florbetapir, Florbetaben, Flutemetamol, [F-18]NAV4694) and processing pipelines produce different scales. A value of 1.4 SUVR in one study might mean something very different in another.
+Amyloid PET imaging has revolutionized our ability to detect and quantify amyloid-beta plaques *in vivo* — a defining pathological characterisic of Alzheimer's disease. But different tracers (e.g., PiB, Florbetapir, Florbetaben, Flutemetamol, [F-18]NAV4694) and processing pipelines produce different scales. A value of 1.4 SUVR in one study might mean something very different in another.
+
+<div style="text-align: center;">
+  <img src="images/ref_reg.jpg" style="width:30%;" />
+</div>
 
 This variability makes it difficult to:
 - Compare results across studies or centres
@@ -20,7 +23,7 @@ To address this, the **Centiloid scale (CL)** was proposed by Klunk et al. (2015
 - **0 CL**: Mean amyloid burden in young healthy controls  
 - **100 CL**: Mean amyloid burden in mild-t0-moderate Alzheimer's disease patients
 
-Once mapped to this scale, SUVR values from *any* validated tracer and pipeline can be **converted to Centiloids**, enabling consistent interpretation and comparison in various contexts [go to the Interpretation section](#interpretation).
+Once mapped to this scale, SUVR values from *any* validated tracer and pipeline can be **converted to Centiloids**, enabling consistent interpretation and comparison in various contexts (see Interpretation tab).
 
 ## Key Features of the Centiloid Scale
 
@@ -29,14 +32,12 @@ Once mapped to this scale, SUVR values from *any* validated tracer and pipeline 
 - 🔧 Requires pipeline validation if using custom methods  
 - 🔗 Supported by an open-access reference implementation via [GAAIN](https://www.gaain.org/centiloid-project)
 
-## Workshop (and App) overview:
+## Workshop overview:
 
-This app was design to provide a comprehensive overview of the Centiloid scale with interactive examples.
+This app was design to provide an overview of the Centiloid scale with interactive examples.
 The following topics are covered:
 - How the Centiloid is defined and calculated  
 - How to interpretation it
-- When and how it's used  
-- What the values mean in research and clinical practice  
 - How to validate your own processing pipeline  
 - Provide a software with Centiloid pipeline database
 

@@ -7,10 +7,27 @@ server <- function(input, output) {
   #bs_themer()
   
   observeEvent(input$go_to_interpretation, {
-    updateNavs(inputId = "navs", selected = "interpretation")
+   updateNavs(inputId = "navs", selected = "interpretation")
   })
   
   source("global.R")
+  
+  #---------------------------
+  # TAB 1: Why quantify Ab?
+  #---------------------------
+  
+  output$image_cl_vr <- renderImage({
+    req(image_files)
+    list(
+      src = file.path("./images/CL_VR.png"),
+      contentType = "image/png",
+      width = "80%", height = "80%"
+    )
+  }, deleteFile = FALSE)
+  
+  #---------------------------
+  # TAB 2: Why quantify Ab?
+  #---------------------------
   
   suvr_data <- PiB_gaain |> 
     dplyr::select(sub_id, suvr_wc) |>
@@ -35,40 +52,6 @@ server <- function(input, output) {
       dplyr::filter(grepl("^YC", sub_id)) |> 
       dplyr::pull(suvr_wc) |> 
       mean(na.rm = TRUE)
-  })
-  
-  # Transformed CL values based on current stretch
-  output$stretchPlot <- renderPlot({
-    suvr_min <- input$stretch_range[1]
-    suvr_max <- input$stretch_range[2]
-    
-    # Linear transformation: SUVR to CL
-    suvr_data <- suvr_data |>
-      dplyr::mutate(CL = 100 * (suvr_wc - suvr_min) / (suvr_max - suvr_min))
-    
-    ggplot(suvr_data, aes(x = CL, y = 0)) +
-      geom_hline(yintercept = 0) +
-      geom_point(aes(y=0.01, color = dx), shape = 4, size = 5,stroke = 1.5) + 
-      scale_color_manual(values = c("AD" = "red", "YC" = "blue")) +
-      # Add mean for AD (red) and YC (blue)
-      geom_point(aes(x = 100 * (mean_AD() - suvr_min) / (suvr_max - suvr_min), y = 0), 
-                 color = "red", size = 5, shape = 19, stroke = 1.5) +
-      geom_point(aes(x = 100 * (mean_YC() - suvr_min) / (suvr_max - suvr_min), y = 0), 
-                 color = "blue", size = 5, shape = 19, stroke = 1.5) +
-      scale_x_continuous(limits = c(-20, 115)) +
-      theme_minimal() +
-      theme(axis.title = element_blank(),
-            legend.position = "none",
-            panel.grid.major.y = element_blank(),
-            panel.grid.minor.y = element_blank()) +
-      labs(title = "Dynamic SUVR-to-Centiloid Stretch",
-           subtitle = paste("AD mean:", round(mean_AD(), 2), " | YC mean:", 
-                            round(mean_YC(), 2)))
-  }, height = 300, res = 72)
-  
-  # Compute centiloid from suvr
-  cl_value <- reactive({
-    100 * (input$suvr_input - suvr_young) / (suvr_ad - suvr_young)
   })
   
   
@@ -99,6 +82,49 @@ server <- function(input, output) {
            subtitle = paste("AD mean:", round(mean_AD(), 2), " | YC mean:", 
                             round(mean_YC(), 2)))
   }, height = 300, res = 72)
+  
+  output$h2hPlot <- renderPlot({
+
+        h2h_data <- h2h_table 
+    
+    ggplot(h2h_data, aes(x = pib_suvr_wcb, y = f18_suvr_wcb, color = tracer)) +
+      geom_abline(color="darkgrey") +
+      geom_point(size = 2) +
+      
+      # Linear model per tracer
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+      
+      # Add equations and R²
+      stat_poly_eq(
+        aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+        formula = y ~ x,
+        parse = TRUE,
+        label.x = "left",
+        label.y = "top",
+        size = 6
+      ) +
+      scale_color_manual(values = c(
+        "Flutemetamol" = "#640acc", 
+        "Florbetapir" = "#ed1c23",
+        "Florbetaben" = "#011f5f",
+        "NAV4694" = "#027f47"
+      )) +
+      labs(
+        title = "H2H PiB vs F-18 Tracers",
+        x = "PiB SUVr (WCB)",
+        y = "F-18 SUVr (WCB)",
+        color = "Tracer"
+      ) +
+      theme_minimal(base_size = 16) +
+      theme(legend.position = "bottom",
+        plot.title = element_text(size = 16, face = "bold"),
+        axis.title = element_text(size = 16),
+        axis.text = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13)
+      )
+  })
+  
   
   # Compute centiloid from suvr
   cl_value <- reactive({
@@ -197,7 +223,7 @@ server <- function(input, output) {
 
 
   # INTERPRETATION
-  image_files <- mixedsort(list.files(file.path("./images/"), 
+  image_files <- mixedsort(list.files(file.path("./images/interpretation"), 
                                       pattern = ".(png|jpg|jpeg|gif)$", 
                                       full.names = FALSE))
   # Reactive index
@@ -220,7 +246,7 @@ server <- function(input, output) {
   output$image_display <- renderImage({
     req(image_files)
     list(
-      src = file.path("./images/", image_files[current_index()]),
+      src = file.path("./images/interpretation/", image_files[current_index()]),
       contentType = "image/png",
       alt = image_files[current_index()],
       width = "80%", height = "80%"
@@ -322,18 +348,20 @@ server <- function(input, output) {
       theme_minimal(base_size = 16)
   }, width = 600, height = 350)
   
+  output$table_software_clinical <- renderTable({software_clinical_table}, align = "lcccc", striped = TRUE) 
+  output$table_software_research <- renderTable({software_research_table}, align = "ll", striped = TRUE) 
   
  #show intro modal
-   observeEvent("", {
-    showModal(modalDialog(
-     includeHTML("intro_text.Rhtml"),
-    easyClose = TRUE,
-   footer = tagList(
-    actionButton(inputId = "intro", label = "INTRODUCTION TOUR", icon = icon("info-circle")),
-   modalButton("Close")
-    )
-   ))
-  })
+  #  observeEvent("", {
+  #   showModal(modalDialog(
+  #    includeHTML("intro_text.Rhtml"),
+  #   easyClose = TRUE,
+  #  footer = tagList(
+  #   actionButton(inputId = "intro", label = "INTRODUCTION TOUR", icon = icon("info-circle")),
+  #  modalButton("Close")
+  #   )
+  #  ))
+  # })
   
 
   
