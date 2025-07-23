@@ -11,16 +11,16 @@ server <- function(input, output) {
   # INTRO OVERLAY
   #---------------------------
   
-  # observeEvent("", {
-  #   showModal(modalDialog(
-  #     includeHTML("texts/intro_text.Rhtml"),
-  #     easyClose = TRUE,
-  #     footer = tagList(
-  #       modalButton("Close")
-  #     )
-  #   ))
-  # })
-  # 
+  observeEvent("", {
+    showModal(modalDialog(
+      includeHTML("texts/intro_text.Rhtml"),
+      easyClose = TRUE,
+      footer = tagList(
+        modalButton("Close")
+      )
+    ))
+  })
+
   #---------------------------
   # TAB 1: Why quantify Ab?
   #---------------------------
