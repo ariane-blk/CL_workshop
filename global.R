@@ -1,7 +1,7 @@
 # Hi :)
 
 # INSTALL DEPENDENCIES ----------------------------------------------------
-setwd("~/Desktop/CL_workshop")
+#setwd("~/Desktop/CL_workshop")
 source('dependencies.R')
 # load all packages
 lapply(required_packages, require, character.only = TRUE)
