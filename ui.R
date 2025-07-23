@@ -1,52 +1,50 @@
 ui <- page_fillable(
-  # Add fixed size CSS styling
-  # tags$head(
-  #   tags$style(HTML("
-  #     body, html {
-  #       width: 1600px;
-  #       height: 1000px;
-  #       overflow: hidden;
-  #       margin: 0 auto;
-  #     }
-  #     .container-fluid {
-  #       width: 100%;
-  #       height: 100%;
-  #     }
-  #   "))
-  # ),
   titlePanel("AAIC25 | GAAIN Centiloid workshop"),
   theme = bs_theme(bootswatch = "lumen"),
-  # sidebar = sidebar(
-  #   title = "a sidebar",
-  #   id = "sidebar",
-  # ),
   navset_card_tab(id = "navs",  
-    nav_panel("⚖️ Why quantify Aβ?",
+                  
+    nav_panel(icon = bsicons::bs_icon("thermometer-half"),"Why quantify Aβ?",
               accordion(  
-                open = FALSE,
-                accordion_panel( 
+                accordion_panel(
+                  open = TRUE,
                   title = "From visual read to quantification", 
                   icon = bsicons::bs_icon("eye-fill"),
                   div(
-                    style = "text-align: center;",
-                    imageOutput("image_cl_vr", height = "auto", width = "75%")
+                    style = "display: flex; justify-content: center;",
+                    imageOutput("image_cl_vr", height = "75%", width = "75%")
                   ),
-                  "(List is not exhaustive!)"
+                  div(
+                    style = "font-size: 0.85em; line-height: 0.5em; margin-top: 1px;font-style: italic;",
+                    p(""),
+                    p("Adapted from:"),
+                    p("Sabri, Osama, et al. \"Beta-amyloid imaging with florbetaben.\" Clinical and translational imaging 3.1 (2015): 13-26."),
+                    p("Cortes‐Blanco, Anabel, et al. \"Florbetapir (18F) for brain amyloid positron emission tomography: Highlights on the European marketing approval.\" Alzheimer's & Dementia 10 (2014): S395-S399.")
+                  ),                
                   ),  
                 accordion_panel(
-                  title = "Quantification 101",
+                  open = FALSE,
+                  title = "Need for a unfifed measure of amyloid load",
                   icon = bsicons::bs_icon("thermometer-half"),
-                  #htmltools::includeHTML("intro.html"),
-                  includeMarkdown("intro.Rmd"),
-                  p("Once mapped to this scale, SUVR values from any validated tracer and pipeline can be ",
-                    "converted to Centiloids, enabling consistent interpretation and comparison in various contexts. "
-                    
-                  )
+                  includeMarkdown("texts/intro.Rmd")
                 )
               )
               ), 
-    nav_panel("🧠 Centiloid 101",  "layout_columns",     
+    nav_panel("🧠 Centiloid 101",      
               layout_columns( 
+                card(
+                  card_header("Centiloid Scaling of F-18 tracers"),
+                  div(
+                    style = "text-align: center;",
+                    div(
+                      style = "display: block; margin-left: auto; margin-right: auto; width: 100%;",
+                      imageOutput("cl_image", height = "auto", width = "100%")
+                    )
+                  ),
+                  div(
+                    style = "font-size: 0.85em; line-height: 0.5em; margin-top: 1px;font-style: italic;",
+                    p(""),
+                    p("Courtesy of Renaud La Joie"),)
+                ),
                 card(
                   card_header("Mapping SUVR to Centiloid"),
                   plotOutput("centiloidPlot"),
@@ -60,11 +58,7 @@ ui <- page_fillable(
                               min = 0.5, max = 3.0, value = c(1.0, 1.5), step = 0.01),
                   plotOutput("stretchPlot1")
                 ),
-                card(
-                  card_header("Centiloid Scaling of F-18 tracers"),
-                  plotOutput("h2hPlot")
-                  
-                )
+
               )
               ),
     nav_panel("❓ How to interpret it",  value = "interpretation",
@@ -73,7 +67,13 @@ ui <- page_fillable(
                   card_header("General guidelines for Centiloid scale interpretation"),
                   div(
                     style = "text-align: center;",
-                    imageOutput("image_display", height = "auto", width = "75%")
+                    imageOutput(
+                      "image_display",
+                      height = "auto",
+                      width = "75%",
+                      inline = FALSE
+                    ) %>% 
+                      tagAppendAttributes(style = "display: block; margin: 0 auto;")
                   ),
                   fluidRow(
                     column(1, actionButton("prev_img", "⬅️")),
@@ -86,36 +86,129 @@ ui <- page_fillable(
               "Collij, Bollack, et al., Centiloid recommendations for clinical 
               context‐of‐use from the AMYPAD consortium, Alzheimer's & Dementia (2024)"
               ),
-    #nav_panel("Notable stuff", "Dynamic range Gill"),
+    nav_panel("⚠️ Notes of caution",
+              accordion(
+                accordion_panel("Quality control",
+                                imageOutput("qc", height = "70%", width = "70%")
+                )
+              ),
+              
+              layout_columns(
+                col_widths = c(6, 6),  
+                accordion(
+                  accordion_panel("Acquisition time window",
+                                  imageOutput("acq", height = "70%", width = "70%"),
+                                  p(""),
+                                  p("Centiloid equations for each tracers were calculated with data acquired during the following time windows:"),
+                                  tags$ul(
+                                    tags$li("PiB: 50-70 min post injection (p.i.)"),
+                                    tags$li("NAV: 50-70 min p.i."),
+                                    tags$li("FMM: 90-110 min p.i."),
+                                    tags$li("FBB: 90-110 min p.i."),
+                                    tags$li("FBP: 50-60 min p.i.")
+                                  )
+                  )
+                ),
+                accordion(
+                  accordion_panel("Atypical pattern",
+                                  p("Images atypical patterns.")
+                  )
+                )
+              )
+              ),
     nav_panel("🚫 What not to do", "Why can't you apply any Centiloid equation?",
-    layout_columns( 
-            card(
-              numericInput("suvr_input_eq", "Input SUVR value", value = 1.4, min = 0, max = 2,  step = 0.1),
-              plotOutput("cl_eq_plot")),
-            card(
-              h3("Level-3"),
-              "Coming soon..."
-            ),
-            col_widths = c(6, 6) 
-          ) ), 
+              layout_columns( 
+                card(
+                  div(style = "display: flex; justify-content: center;",
+                      sliderInput("suvr_input_eq", "Select SUVR value", min = 1.4, max = 2, value = 1.4, step = 0.1)
+                  ),
+                  plotOutput("cl_eq_plot"),
+                  tableOutput("cl_eq_table_1")
+                ),
+                card(
+                  #h3("Level-3"),
+                  "In reality, each pipeline would give slightly different SUVr. For a specific amyloid PET scan, this could look like",
+                  tableOutput("cl_eq_table_2")
+                ),
+                col_widths = c(6, 6) 
+              ), "Iaccarino, et al. A practical overview of the use of amyloid-PET Centiloid values in clinical trials and research. NeuroImage: Clinical (2025)"), 
           
     nav_panel("🧑‍💻 Validate your own pipeline", #"Page B content",
               layout_columns( 
                 card(
                   h3("Level-1"),
-                  plotOutput("scatterPlot"),
-                  actionButton("testBtn", "Test"),
-                  actionButton("regen_data", "Regenerate Data"),
-                  uiOutput("testResultsUI"),
-                  tableOutput("testResults")
+                  accordion(
+                    open = FALSE,
+                    accordion_panel(
+                      "Test & Validate the new pipeline with GAAIN data",
+                      div(style = "display: flex; justify-content: center;",
+                          div(style = "width: 600px;",  # adjust width as needed
+                              plotOutput("scatterPlot")
+                          )),
+                      div(style = "display: flex; justify-content: center;",
+                          actionButton("validateBtn", "Generate Data & Run Test"),
+                      ),
+                      div(style = "display: flex; margin-top: 2px; justify-content: center;",
+                          tableOutput("testResults")
+                      )
+                      
+                    )
+                    )
                 ),
                 card(
-                  h3("Level-2"),
-                  "Coming soon..."
+                  h3("Level-2 (Step 1)"),
+                  div(
+                    style = "text-align: center;",
+                    div(
+                      style = "display: block; margin-left: auto; margin-right: auto; width: 85%;",
+                      imageOutput("suvr_pib", height = "auto", width = "100%")
+                    )
+                  ),
+                  div(
+                    style = "font-size: 0.85em; line-height: 0.5em; margin-top: 1px;font-style: italic;",
+                    p(""),
+                    p("Courtesy of Renaud La Joie"),),
+                  accordion(
+                    open = FALSE,
+                    accordion_panel(
+                      "Compute PiB-equivalent SUVr for each tracer",
+                      plotOutput("suvrfpib"),
+                      div(
+                        style = "text-align: center; font-size: 1em; line-height: 1.5em; margin-top: 1px;",
+                        p(""),
+                        tags$ul(
+                          tags$li("NAV SUVr = 1.1 x PiB SUVr - 0.07"),
+                          tags$li("FMM SUVr = 0.61 x PiB SUVr + 0.39"),
+                          tags$li("FBB SUVr = 0.77 x PiB SUVr + 0.22"),
+                          tags$li("FBP SUVr = 0.54 x PiB SUVr + 0.50")
+                        ),
+                        p(HTML("Test condition: R<sup>2</sup> > 0.70 (satisfied for all tracers here)."))
+                      ) 
+
+                    )
+                  )
                 ),
                 card(
-                  h3("Level-3"),
-                  "Coming soon..."
+                  h3("Level-2 (Step 2)"),
+                  accordion(
+                    open = FALSE,
+                    accordion_panel(
+                      "Compute SUVr-to-Centiloid convertion equation",
+                      plotOutput("suvrtocl"),
+                      div(
+                        style = "text-align: center; font-size: 1em; line-height: 1.5em; margin-top: 1px;",
+                        p(""),
+                        tags$ul(
+                          tags$li("NAV CL = 85.36 x NAV SUVr - 88.66"),
+                          tags$li("FMM CL = 121.47 x FMM SUVr - 121.3"),
+                          tags$li("FBB CL = 153.55 x FBB SUVr - 155.09"),
+                          tags$li("FBP CL = 175.18 x FBP SUVr - 182.24")
+                        ),
+                        p(HTML("<span style='color: red; font-weight: bold;'>THESE ARE NOT TO REUSE</span>"))
+                      ) 
+
+                    )
+                  )
                 ),
                 col_widths = c(4, 4, 4) 
               ) ), 
@@ -140,11 +233,12 @@ ui <- page_fillable(
     nav_menu( 
       "Resources", 
       nav_panel("Literature", 
-                includeMarkdown("refs.Rmd")), 
+                includeMarkdown("texts/refs.Rmd")), 
       "----", 
       "Websites:", 
       nav_item( 
         a("GAAIN", href = "http://www.gaain.org/centiloid-project"),
+        a("EMA Qualification Opinion",  href = "https://www.ema.europa.eu/en/documents/other/qualification-opinion-centiloid-measure-amyloid-pet-quantify-brain-amyloid-deposition_en.pdf"),
         a("PubMed Centiloid", href = "https://pubmed.ncbi.nlm.nih.gov/?term=centiloid")
         
       ), 

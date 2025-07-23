@@ -5,17 +5,27 @@ suvr_ad <- 2.0     # Example SUVR for AD patients (CL = 100)
 
 server <- function(input, output) {
   #bs_themer()
-  
-  observeEvent(input$go_to_interpretation, {
-   updateNavs(inputId = "navs", selected = "interpretation")
-  })
-  
   source("global.R")
   
+  #---------------------------
+  # INTRO OVERLAY
+  #---------------------------
+  
+  # observeEvent("", {
+  #   showModal(modalDialog(
+  #     includeHTML("texts/intro_text.Rhtml"),
+  #     easyClose = TRUE,
+  #     footer = tagList(
+  #       modalButton("Close")
+  #     )
+  #   ))
+  # })
+  # 
   #---------------------------
   # TAB 1: Why quantify Ab?
   #---------------------------
   
+
   output$image_cl_vr <- renderImage({
     req(image_files)
     list(
@@ -26,8 +36,18 @@ server <- function(input, output) {
   }, deleteFile = FALSE)
   
   #---------------------------
-  # TAB 2: Why quantify Ab?
+  # TAB 2: Centiloid 101
   #---------------------------
+  
+  output$cl_image <- renderImage({
+    req(image_files)
+    list(
+      src = file.path("./www/CL_image.png"),
+      contentType = "image/png",
+      width = "80%", height = "80%"
+    )
+  }, deleteFile = FALSE)
+  
   
   suvr_data <- PiB_gaain |> 
     dplyr::select(sub_id, suvr_wc) |>
@@ -83,48 +103,7 @@ server <- function(input, output) {
                             round(mean_YC(), 2)))
   }, height = 300, res = 72)
   
-  output$h2hPlot <- renderPlot({
 
-        h2h_data <- h2h_table 
-    
-    ggplot(h2h_data, aes(x = pib_suvr_wcb, y = f18_suvr_wcb, color = tracer)) +
-      geom_abline(color="darkgrey") +
-      geom_point(size = 2) +
-      
-      # Linear model per tracer
-      geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
-      
-      # Add equations and R²
-      stat_poly_eq(
-        aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
-        formula = y ~ x,
-        parse = TRUE,
-        label.x = "left",
-        label.y = "top",
-        size = 6
-      ) +
-      scale_color_manual(values = c(
-        "Flutemetamol" = "#640acc", 
-        "Florbetapir" = "#ed1c23",
-        "Florbetaben" = "#011f5f",
-        "NAV4694" = "#027f47"
-      )) +
-      labs(
-        title = "H2H PiB vs F-18 Tracers",
-        x = "PiB SUVr (WCB)",
-        y = "F-18 SUVr (WCB)",
-        color = "Tracer"
-      ) +
-      theme_minimal(base_size = 16) +
-      theme(legend.position = "bottom",
-        plot.title = element_text(size = 16, face = "bold"),
-        axis.title = element_text(size = 16),
-        axis.text = element_text(size = 14),
-        legend.title = element_text(size = 14),
-        legend.text = element_text(size = 13)
-      )
-  })
-  
   
   # Compute centiloid from suvr
   cl_value <- reactive({
@@ -152,56 +131,63 @@ server <- function(input, output) {
       theme()
   })
   
-  # VALIDATE STEP 1
-  random_df <- eventReactive(input$regen_data, {
-    set.seed(sample(1:1e6, 1))  # random seed for new data each click
+  #---------------------------
+  # TAB 2: Centiloid 101
+  #---------------------------
+  
+  output$qc <- renderImage({
+    req(image_files)
+    list(
+      src = file.path("./www/QC.png"),
+      contentType = "image/png",
+      width = "80%", height = "80%"
+    )
+  }, deleteFile = FALSE)
+  
+  
+  output$acq <- renderImage({
+    req(image_files)
+    list(
+      src = file.path("./www/Acq_time.png"),
+      contentType = "image/png",
+      width = "80%", height = "80%"
+    )
+  }, deleteFile = FALSE)
+  
+  #-----------------------------------
+  # TAB ?: Validate your own pipeline
+  #-----------------------------------
+  
+  # Level-1
+  #-----------------------------------
+  output$suvr_pib <- renderImage({
+    req(image_files)
+    list(
+      src = file.path("www/suvr_pib.png"),
+      contentType = "image/png",
+      width = "80%", height = "80%"
+    )
+  }, deleteFile = FALSE)
+  #-----------------------------------
+  
+  validate_result <- eventReactive(input$validateBtn, {
+    # Generate new data
+    set.seed(sample(1:1e6, 1))
     df_new <- PiB_gaain[, c("sub_id", "cl_wc")]
     df_new$cl_rand <- round(sapply(df_new$cl_wc, function(x) {
       sign <- sample(c(-1, 1), 1)
-      diff_pct <- runif(1, -0.01, 0.3)
+      diff_pct <- runif(1, -0.01, 0.18)
       x * (1 + sign * diff_pct)
     }), 1)
-    df_new
-  }, ignoreNULL = FALSE)  # triggers once at startup
-  
-  # Reactive linear model fit
-  fit <- reactive({
-    lm(cl_rand ~ cl_wc, data = random_df())
-    })
-
-  output$scatterPlot <- renderPlot({
-    model <- fit()
-    eq <- paste0("y = ", round(coef(model)[2], 3), "x + ", round(coef(model)[1], 3))
-    r2 <- summary(model)$r.squared
     
-    ggplot(random_df(), aes(x = cl_wc, y = cl_rand)) +
-      geom_point() +
-      geom_smooth(method = "lm", se = FALSE, color = "blue") +
-      annotate("text", 
-               x = 5, y = 140, 
-               label = paste(eq, "\nR² = ", round(r2, 3)),
-               hjust = 0, vjust = 1, 
-               size = 5) +
-      labs(
-        x = "Centiloid (GAAIN)",   
-        y = "Your Centiloid values" 
-      ) +
-      theme_minimal() + xlim(c(0, 150)) + ylim(c(0, 150)) + 
-      theme(
-        axis.title = element_text(size = 16),  
-        axis.text = element_text(size = 14)   
-      )
-  }, width = 350, height = 350) 
-  
-  # Test conditions on button click
-  observeEvent(input$testBtn, {
-    df_current <- random_df()
-    model <- fit()
+    # Fit model
+    model <- lm(cl_rand ~ cl_wc, data = df_new)
     coef_est <- coef(model)
     slope <- coef_est[2]
     intercept <- coef_est[1]
     r2 <- summary(model)$r.squared
     
+    # Run tests
     tests <- data.frame(
       Condition = c("Slope between 0.98 and 1.02",
                     "Intercept between -2 and 2",
@@ -212,24 +198,139 @@ server <- function(input, output) {
         r2 > 0.98
       )
     )
+    tests$Result <- ifelse(tests$Passed, "\u2713", "\u2717")  # ✓ or ✗
     
-    tests$Result <- ifelse(tests$Passed, "\u2713", "\u2717") # ✓ or ✗
-    
-    output$testResults <- renderTable({
-      tests[, c("Condition", "Result")]
-    }, colnames = FALSE)
-    })
+    list(df = df_new, model = model, tests = tests)
+  }, ignoreNULL = FALSE)  # Run once on startup
   
-
-
-  # INTERPRETATION
+  output$scatterPlot <- renderPlot({
+    df <- validate_result()$df
+    model <- validate_result()$model
+    
+    eq <- paste0("y = ", round(coef(model)[2], 2), "x + ", round(coef(model)[1], 2))
+    r2 <- summary(model)$r.squared
+    
+    ggplot(df, aes(x = cl_wc, y = cl_rand)) +
+      geom_point() +
+      geom_smooth(method = "lm", se = FALSE, color = "blue") +
+      annotate("text", 
+               x = 5, y = 140, 
+               label = paste(eq, "\nR² = ", round(r2, 3)),
+               hjust = 0, vjust = 1, 
+               size = 5) +
+      labs(
+        x = "Centiloid (GAAIN)",   
+        y = "New pipeline Centiloid values" 
+      ) +
+      theme_minimal() + xlim(c(0, 150)) + ylim(c(0, 150)) +  
+      theme(
+        axis.title = element_text(size = 16),  
+        axis.text = element_text(size = 14)   
+      )
+  }, width = 350, height = 350)
+  
+  output$testResults <- renderTable({
+    validate_result()$tests[, c("Condition", "Result")]
+  }, colnames = FALSE)
+  
+  # Level-2
+  #-----------------------------------
+  output$suvrfpib <- renderPlot({
+    
+    h2h_data <- h2h_table 
+    
+    ggplot(h2h_data, aes(x = pib_suvr_wcb, y = f18_suvr_wcb, color = tracer)) +
+      geom_abline(color="darkgrey") +
+      geom_point(size = 2) +
+      
+      # Linear model per tracer
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+      
+      # Add equations and R²
+      stat_poly_eq(
+        aes(label = paste(..eq.label.., ..rr.label.., sep = "~~~")),
+        formula = y ~ x,
+        parse = TRUE,
+        label.x = "left",
+        label.y = "top",
+        size = 4,
+        coef.digits = 2
+      ) +
+      scale_color_manual(values = c(
+        "Flutemetamol" = "#640acc", 
+        "Florbetapir" = "#ed1c23",
+        "Florbetaben" = "#011f5f",
+        "NAV4694" = "#027f47"
+      )) +
+      labs(
+        title = "New pipeline SUVr for PiB and F-18 tracers",
+        x = "PiB SUVr (WCB)",
+        y = "F-18 SUVr (WCB)",
+        color = "Tracer"
+      ) +
+      theme_minimal(base_size = 16) +
+      theme(legend.position = "bottom",
+            plot.title = element_text(size = 16, face = "bold"),
+            axis.title = element_text(size = 16),
+            axis.text = element_text(size = 14),
+            legend.title = element_text(size = 14),
+            legend.text = element_text(size = 13)
+      ) +
+      guides(color = guide_legend(nrow = 2))
+  })
+  
+  output$suvrtocl <- renderPlot({
+    
+    h2h_data <- h2h_table 
+    
+    ggplot(h2h_data, aes(x = f18_suvr_wcb, y = f18_cl, color = tracer)) +
+      geom_point(size = 2) +
+      
+      # Linear model per tracer
+      geom_smooth(method = "lm", se = FALSE, formula = y ~ x) +
+      
+      # Add equations and R²
+      stat_poly_eq(
+        aes(label = paste(..eq.label..)),
+        formula = y ~ x,
+        parse = TRUE,
+        label.x = "left",
+        label.y = "top",
+        size = 5,
+        coef.digits = 5
+      ) +
+      scale_color_manual(values = c(
+        "Flutemetamol" = "#640acc", 
+        "Florbetapir" = "#ed1c23",
+        "Florbetaben" = "#011f5f",
+        "NAV4694" = "#027f47"
+      )) +
+      labs(
+        title = "New pipeline SUVr for PiB and F-18 tracers",
+        x = "F-18 SUVr (WCB)",
+        y = "F-18 Centiloid (WCB)",
+        color = "Tracer"
+      ) +
+      theme_minimal(base_size = 16) +
+      theme(legend.position = "bottom",
+            plot.title = element_text(size = 16, face = "bold"),
+            axis.title = element_text(size = 16),
+            axis.text = element_text(size = 14),
+            legend.title = element_text(size = 14),
+            legend.text = element_text(size = 13)
+      ) +
+      guides(color = guide_legend(nrow = 2))
+  })
+  
+  #-----------------------------------
+  # TAB ?: Interpretation
+  #-----------------------------------
+  
   image_files <- mixedsort(list.files(file.path("./images/interpretation"), 
                                       pattern = ".(png|jpg|jpeg|gif)$", 
                                       full.names = FALSE))
-  # Reactive index
   current_index <- reactiveVal(1)
   
-  # Button logic
   observeEvent(input$next_img, {
     if (current_index() < length(image_files)) {
       current_index(current_index() + 1)
@@ -258,110 +359,77 @@ server <- function(input, output) {
     paste("Slide", current_index(), "of", length(image_files))
   })
   
-  # EXAMPLE EQUATIONS
-  
-  # SUVR example points
-  suvr_values <- seq(1, 2.5, length.out = 5)
-  
-  # Define 5 linear equations as list of (slope, intercept)
-  linear_eqs <- list(
-    list(slope = 183.07, intercept = -177.26), 
-    list(slope = 203.68, intercept = -207.15),
-    list(slope = 230.47, intercept = -233.33),
-    list(slope = 184.12, intercept = -233.72),
-    list(slope = 205.72, intercept = -209.63),
-    list(slope = 174.52, intercept = -187.26),
-    list(slope = 188.22, intercept = -189.16)
-  )
-  
-  output$animPlot <- renderPlot({
-    # For each linear equation, compute transformed values
-    df_list <- lapply(seq_along(linear_eqs), function(i) {
-      eq <- linear_eqs[[i]]
-      data.frame(
-        SUVR = input$suvr_input_eq,#suvr_values,
-        Transformed = eq$slope * suvr_values + eq$intercept,
-        Equation = paste0("y = ", eq$slope, " * x ", eq$intercept)
-      )
-    })
-    
-    df_all <- do.call(rbind, df_list)
-    df_all$SUVr <- as.factor(df_all$SUVR)
-    
-    # ggplot(df_all, aes(x = SUVR, y = Transformed, color = Equation, shape = SUVr)) +
-    #   geom_point(size = 3) +
-    #   geom_line(aes(group = Equation)) +
-    #   labs(
-    #     title = "SUVR Values Transformed with Different Linear Equations",
-    #     x = "Original SUVR",
-    #     y = "\"Centiloid\"",
-    #     color = "Equations"
-    #   ) +
-    #   theme_minimal(base_size = 16)
-  })
-  
-  equations <- list(
-    "Equation A" = function(suvr) 183.07 * suvr -177.26,
-    "Equation B" = function(suvr) 203.68 * suvr -207.15,
-    "Equation C" = function(suvr) 230.47 * suvr -233.33
-  )
-  linear_eqs <- list(
-    list(slope = 183.07, intercept = -177.26), 
-    list(slope = 203.68, intercept = -207.15),
-    list(slope = 230.47, intercept = -233.33)
-    #list(slope = 184.12, intercept = -233.72),
-    #list(slope = 205.72, intercept = -209.63),
-    #list(slope = 174.52, intercept = -187.26),
-    #list(slope = 188.22, intercept = -189.16)
-  )
-  
-  
+  #-----------------------------------
+  # TAB ?: What not to do
+  #-----------------------------------
+
   output$cl_eq_plot <- renderPlot({
     suvr <- input$suvr_input_eq
     
     eq_params <- data.frame(
-      Equation = paste0("y = ", c(183.07, 203.68, 230.47, 184.12, 205.72, 174.52, 188.22), 
+      Equation = paste0("y = ", c(174.52, 183.07, 203.68, 230.47, 184.12, 205.72,  188.22), 
                         " * x ", 
-                        c(-177.26, -207.15, -233.33, -233.72, -209.63, -187.26, -189.16)),
+                        c(-187.26, -177.26, -207.15, -233.33, -233.72, -209.63,  -189.16)),
       Slope = c(183.07, 203.68, 230.47, 184.12, 205.72, 174.52, 188.22),
       Intercept = c(-177.26, -207.15, -233.33, -233.72, -209.63, -187.26, -189.16)
     )
     
     df <- data.frame(
       Equation = eq_params$Equation,
-      SUVR = suvr,
-      Centiloid = eq_params$Slope * suvr + eq_params$Intercept
+      SUVr = suvr,
+      Centiloid = as.integer(round(eq_params$Slope * suvr + eq_params$Intercept, 0))
     )
-
+    
+    
+    output$cl_eq_table_1 <- renderTable({
+      df
+    })
+    
+    eq_params_true <- data.frame(
+      Equation = paste0("y = ", c(183.07, 203.68, 230.47, 184.12, 205.72, 174.52, 188.22), 
+                        " * x ", 
+                        c(-177.26, -207.15, -233.33, -233.72, -209.63, -187.26, -189.16)),
+      Slope = c(183.07, 203.68, 230.47, 184.12, 205.72, 174.52, 188.22),
+      Intercept = c(-177.26, -207.15, -233.33, -233.72, -209.63, -187.26, -189.16),
+      fake_CL = c(70, 62, 65, 74, 77, 71, 68)
+    )
+    df_true <- data.frame(
+      Equation = eq_params_true$Equation,
+      SUVr_true = (eq_params_true$fake_CL - eq_params_true$Intercept)/eq_params_true$Slope,
+      Centiloid = as.integer(round(eq_params_true$fake_CL,0))
+    )
+    
+    
+    output$cl_eq_table_2 <- renderTable({
+      df_true
+    })
+    
     
     ggplot() +
-      geom_abline(data = eq_params, aes(slope = Slope, intercept = Intercept, color = Equation), linewidth = 1.2) +
-      geom_point(data = df, aes(x = SUVR, y = Centiloid, color = Equation), size = 3) +
-      geom_text(data = df, aes(x = SUVR, y = Centiloid, label = paste0(round(Centiloid, 1), " CL"), color = Equation),
-                vjust = -1, hjust = -0.1) +
+      geom_abline(data = eq_params, 
+                  aes(slope = Slope, intercept = Intercept, color = Equation), 
+                  linewidth = 1.2) +
+      geom_point(data = df, aes(x = SUVr, y = Centiloid, color = Equation), size = 3) +
+      #geom_text(data = df, aes(x = SUVr, y = Centiloid, label = paste0(round(Centiloid, 1), " CL"), color = Equation),
+      #          vjust = -1, hjust = -0.1) +
       labs(
-        title = "SUVR Values Transformed with Different Linear Equations",
-        x = "SUVR (custom pipeline)",
-        y = "Centiloid (CL)"
+        title = "SUVr Values Transformed with Different Linear Equations",
+        x = "SUVr",
+        y = "Centiloid"
       ) +
-      coord_cartesian(xlim = c(0.5, 2), ylim = c(0, 110)) +
-      theme_minimal(base_size = 16)
-  }, width = 600, height = 350)
+      coord_cartesian(xlim = c(0.85, 2.3), ylim = c(-20, 200)) +
+      theme_minimal(base_size = 16,
+      )
+  }, 
+  #width = 600, height = 350
+  ) 
+  
+  #-----------------------------------
+  # TAB ?: Software
+  #-----------------------------------
   
   output$table_software_clinical <- renderTable({software_clinical_table}, align = "lcccc", striped = TRUE) 
   output$table_software_research <- renderTable({software_research_table}, align = "ll", striped = TRUE) 
-  
- #show intro modal
-  #  observeEvent("", {
-  #   showModal(modalDialog(
-  #    includeHTML("intro_text.Rhtml"),
-  #   easyClose = TRUE,
-  #  footer = tagList(
-  #   actionButton(inputId = "intro", label = "INTRODUCTION TOUR", icon = icon("info-circle")),
-  #  modalButton("Close")
-  #   )
-  #  ))
-  # })
   
 
   

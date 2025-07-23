@@ -39,4 +39,4 @@ if (length(new.packages)) {
 lapply(required_packages, require, character.only = TRUE)
 
 # Snapshot current environment
-renv::snapshot(prompt = TRUE)
+renv::snapshot(prompt = FALSE)
